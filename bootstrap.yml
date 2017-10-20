@@ -217,6 +217,23 @@
             regexp: "^PKGOPTION_dropbear_OPTION"
             line: 'PKGOPTION_dropbear_OPTION="-p 2222"'
           notify: update-initramfs
+        - name: Copy tool to fetch dropbear ssh fingerprints
+          copy: src=files/dropbear-knownhosts dest=/usr/local/bin/dropbear-knownhosts owner=root group=root mode=755
+        - name: Generate remote dropbear fingerprints for known_hosts file
+          shell: "/usr/local/bin/dropbear-knownhosts {{ ansible_ssh_host }} 2222 > /etc/initramfs-tools/etc/dropbear/known_hosts"
+        - name: Fetch remote known_hosts file
+          fetch:
+            dest: ./known_hosts.{{ ansible_ssh_host }}
+            fail_on_missing: yes
+            flat: yes
+            src: /etc/initramfs-tools/etc/dropbear/known_hosts
+        - name: write unlock-script
+          copy:
+            content: 'echo {{ secret_root_luks }} | ssh -o UserKnownHostsFile=known_hosts.{{ ansible_ssh_host }} -p 2222 root@{{ ansible_ssh_host }} sh -c "cat > /lib/cryptsetup/passfifo"'
+            dest: ./unlock-{{ inventory_hostname }}
+            mode: 0700
+          delegate_to: localhost
+
 
     - name: switch ssh port back to default 22
       # don't trigger an sshd restart here. we still want to connect to :516

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+set -u
+
+if [ $# = 1 ]; then
+    hn=$1
+elif [ $# = 2 ]; then
+    hn="[$1]:$2"
+else
+    echo "usage: $0 hostname [port]" >&2
+    exit 1
+fi
+	
+for n in /etc/initramfs-tools/etc/dropbear/dropbear_*_host_key ; do
+    dropbearkey -y -f $n
+done | \
+  awk '
+$1=="Fingerprint:"{next}
+$1=="Public"{next}
+{print hn " " $0}' hn="$hn"

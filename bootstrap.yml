@@ -203,11 +203,20 @@
     - name: Configure /etc/network/interfaces
       template: src=templates/interfaces.j2 dest=/etc/network/interfaces
 
-    - file: dest=/etc/initramfs-tools/root state=directory
-    - file: dest=/etc/initramfs-tools/root/.ssh state=directory
-    - name: Allow users to remotely authorize to dropbear while booting
-      copy: src=files/cryptlock_authorized_keys dest=/etc/initramfs-tools/root/.ssh/authorized_keys
-      notify: update-initramfs
+    - name: Configure dropbear
+      when: USE_encryption|default(false)|bool
+      block:
+        - file: dest=/etc/initramfs-tools/root state=directory
+        - file: dest=/etc/initramfs-tools/root/.ssh state=directory
+        - name: Allow users to remotely authorize to dropbear while booting
+          copy: src=files/cryptlock_authorized_keys dest=/etc/initramfs-tools/root/.ssh/authorized_keys
+          notify: update-initramfs
+        - name: Switch dropbear initramfs port
+          lineinfile:
+            dest: /etc/initramfs-tools/initramfs.conf
+            regexp: "^PKGOPTION_dropbear_OPTION"
+            line: 'PKGOPTION_dropbear_OPTION="-p 2222"'
+          notify: update-initramfs
 
     - name: switch ssh port back to default 22
       # don't trigger an sshd restart here. we still want to connect to :516

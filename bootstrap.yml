@@ -59,7 +59,11 @@
       delegate_to: '{{ jumphost }}'
 
     - name: switch ssh port to 516
-      lineinfile: "dest={{ dir_root }}/etc/ssh/sshd_config line='Port 516' regexp='^Port'"
+      # this is needed because on :22, the rescue system's sshd is already listening
+      lineinfile:
+        dest: '{{ dir_root }}/etc/ssh/sshd_config'
+        regexp: '^Port'
+        line: 'Port 516'
       delegate_to: '{{ jumphost }}'
 
     - command: chroot {{ dir_root }} service ssh start
@@ -204,6 +208,14 @@
     - name: Allow users to remotely authorize to dropbear while booting
       copy: src=files/cryptlock_authorized_keys dest=/etc/initramfs-tools/root/.ssh/authorized_keys
       notify: update-initramfs
+
+    - name: switch ssh port back to default 22
+      # don't trigger an sshd restart here. we still want to connect to :516
+      # for the bootstrap, but the bootet system should listen on :22 again
+      lineinfile:
+        dest: '/etc/ssh/sshd_config'
+        regexp: '^Port'
+        line: 'Port 516'
 
 #    - command: reboot
 #      delegate_to: '{{ jumphost }}'

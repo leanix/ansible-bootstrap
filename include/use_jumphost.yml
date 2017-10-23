@@ -38,11 +38,9 @@
   # fails, you're probably running an older ansible version which does not
   # set the remote user name for the delegation, or can't connect there for
   # some other reason.
-  # FIXME this assumes that the jumphost is disposable and it's own
-  #       hostname doesn't matter. this is not the case for actual
-  #       jumphosts (eg when creating VMs)
   hostname: "name={{ inventory_hostname }}"
   delegate_to: '{{ jumphost }}'
+  when: USE_change_rescue_name|default(true)|bool
 
 - name: Install software on jumphost needed to setup the target system
   apt: pkg={{ item }}

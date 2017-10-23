@@ -241,7 +241,7 @@
       lineinfile:
         dest: '/etc/ssh/sshd_config'
         regexp: '^Port'
-        line: 'Port 516'
+        line: 'Port 22'
 
 #    - command: reboot
 #      delegate_to: '{{ jumphost }}'
